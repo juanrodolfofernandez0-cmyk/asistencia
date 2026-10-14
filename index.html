@@ -69,7 +69,7 @@ const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
 let D={emps:[],recs:[]};
 try{const s=localStorage.getItem('reg_v1');if(s)D=JSON.parse(s)}catch(e){}
 const save=()=>{try{localStorage.setItem('reg_v1',JSON.stringify(D))}catch(e){}};
-const API=',KEY='https://script.google.com/macros/s/AKfycbyl4m-KuhA4Mopt_O0sPX2yC7TduGVWyTKbL0AFAibiGFp82-WSFP4sIc6XszxB7XgL5w/exec',KEY='Asist-2026-xK9''; // pega aquí la URL de Apps Script y la misma clave
+const API='https://script.google.com/macros/s/AKfycbyl4m-KuhA4Mopt_O0sPX2yC7TduGVWyTKbL0AFAibiGFp82-WSFP4sIc6XszxB7XgL5w/exec',KEY='Asist-2026-xK9';
 async function call(a,d){const r=await fetch(API,{method:'POST',headers:{'Content-Type':'text/plain'},body:JSON.stringify({key:KEY,action:a,...d})});return r.json()}
 function setSync(t){$('#sync').textContent=t}
 async function pull(){if(!API)return;try{const r=await call('get');if(!r.ok)throw 0;D.emps=r.emps;D.recs=r.recs;save();renderEmps();renderLog();setSync('☁️ Sincronizado con Google Sheets')}catch(e){setSync('⚠️ Sin conexión: usando datos locales')}}
