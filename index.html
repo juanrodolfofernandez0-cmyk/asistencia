@@ -1,0 +1,515 @@
+<!DOCTYPE html>
+<html lang="es"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Registro de Asistencia</title>
+<link rel="manifest" href="manifest.json"><meta name="theme-color" content="#2563eb">
+<style>
+:root{color-scheme:light;--bg:#f5f6f8;--card:#fff;--tx:#1a1d23;--mu:#6b7280;--bd:#e3e6ea;--ac:#2563eb;--ok:#16a34a;--ko:#dc2626}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--tx);font:15px/1.45 system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
+main{max-width:720px;margin:0 auto;padding:16px}
+h1{font-size:20px;margin:0 0 12px}
+.tabs{display:flex;gap:6px;margin-bottom:14px;flex-wrap:wrap}
+.tabs button,.seg button{flex:1;padding:10px;border:1px solid var(--bd);background:var(--card);color:var(--tx);border-radius:10px;font:inherit;cursor:pointer;min-width:90px}
+.tabs button.on,.seg button.on{background:var(--ac);color:#fff;border-color:var(--ac)}
+.card{background:var(--card);border:1px solid var(--bd);border-radius:14px;padding:16px;margin-bottom:14px}
+.seg{display:flex;gap:6px;margin-bottom:14px}
+input,select{width:100%;padding:12px;border:1px solid var(--bd);border-radius:10px;background:var(--bg);color:var(--tx);font:inherit;font-size:16px}
+.btn{padding:12px 16px;border:0;border-radius:10px;background:var(--ac);color:#fff;font:inherit;cursor:pointer;width:100%;margin-top:10px}
+.btn.s{background:var(--bd);color:var(--tx);width:auto;padding:6px 10px;margin:0 4px 0 0;font-size:13px}
+video{width:100%;border-radius:12px;background:#000;max-height:340px;object-fit:cover;transform:scaleX(-1)}
+.res{margin-top:12px;padding:14px;border-radius:12px;text-align:center;display:none}
+.res.ok{display:block;background:#dcfce7;border:1px solid var(--ok)}
+.res.ko{display:block;background:#fee2e2;border:1px solid var(--ko)}
+.res b{font-size:18px}.mu{color:var(--mu);font-size:13px}
+#clock{font-size:32px;font-weight:700;text-align:center}
+.row{display:flex;gap:8px;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--bd)}
+.row:last-child{border:0}
+.tw{overflow-x:auto}table{width:100%;border-collapse:collapse;font-size:14px;min-width:460px}
+th,td{padding:8px 6px;text-align:left;border-bottom:1px solid var(--bd)}th{color:var(--mu);font-weight:600}
+.pp{display:flex;gap:6px;margin-bottom:10px}.pp button{flex:1;padding:10px;border:1px solid var(--bd);background:var(--card);color:var(--tx);border-radius:10px;font:inherit;cursor:pointer}.pp button.on{background:var(--ac);color:#fff;border-color:var(--ac)}
+.hide{display:none}#qrbox{display:inline-block;background:#fff;padding:8px;border-radius:8px}
+#homeScreen{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px;position:fixed;top:0;left:0;right:0;bottom:0;background:var(--bg);z-index:9999}
+.homeCard{max-width:420px;width:100%;background:var(--card);border:1px solid var(--bd);border-radius:20px;padding:28px;box-shadow:0 10px 30px rgba(0,0,0,.08);text-align:center}
+.homeLogo{font-size:48px;margin-bottom:10px}
+.homeTitle{font-size:24px;font-weight:800;margin:0 0 6px}
+.homeSub{color:var(--mu);font-size:14px;margin-bottom:20px}
+.homeDivider{display:flex;align-items:center;gap:10px;margin:18px 0;color:var(--mu);font-size:12px}
+.homeDivider::before,.homeDivider::after{content:'';flex:1;height:1px;background:var(--bd)}
+</style></head><body><main>
+
+<!-- PAGINA PRINCIPAL -->
+<div id="homeScreen">
+ <div class="homeCard">
+  <div class="homeLogo">⏱️</div>
+  <div class="homeTitle">Registro de Asistencia</div>
+  <div class="homeSub">Selecciona tu centro de trabajo</div>
+  <div style="text-align:left;margin-top:16px">
+   <label class="mu">🏢 Centro de trabajo</label>
+   <select id="homeCentro"><option value="">Cargando centros...</option></select>
+  </div>
+  <button class="btn" id="homeEnterReg" style="margin-top:14px;background:#16a34a">👷 Entrar a Registro</button>
+  <div class="mu" style="margin-top:6px;font-size:11px">Colaboradores - sin contraseña</div>
+  <div class="homeDivider">ADMINISTRADORES</div>
+  <div style="text-align:left">
+   <label class="mu">👤 Usuario</label><input id="homeUser" placeholder="Usuario">
+   <label class="mu" style="margin-top:8px;display:block">🔒 Contraseña</label><input id="homePass" type="password" placeholder="Contraseña">
+  </div>
+  <button class="btn" id="homeAdminLogin" style="margin-top:12px">🔐 Acceso Administración</button>
+  <div id="homeError" class="res ko" style="margin-top:12px"></div>
+  <div id="homeInfo" class="res ok" style="margin-top:12px"></div>
+  <div class="mu" style="margin-top:14px;font-size:10px">v3.0 Multi-centro · Primer uso: crea tu Superadmin</div>
+ </div>
+</div>
+
+<!-- APP -->
+<div id="appScreen" class="hide">
+<h1>⏱️ Registro de Asistencia</h1><div class="mu" id="sync" style="margin:-6px 0 10px"></div>
+<div style="display:flex;gap:8px;align-items:center;margin-bottom:10px">
+ <div class="mu" id="currentCentroLabel" style="flex:1"></div>
+ <button class="btn s" id="logoutBtn" style="background:var(--ko);color:#fff">🚪 Salir</button>
+</div>
+<div class="tabs">
+ <button data-t="reg" class="on">Registrar</button>
+ <button data-t="emp">🔒 Empleados</button>
+ <button data-t="log">🔒 Registros</button>
+ <button data-t="rep">🔒 Reporte</button>
+ <button data-t="centros">🏢 Centros</button>
+</div>
+
+<section id="reg">
+ <div class="card"><div id="clock"></div><div class="mu" id="date" style="text-align:center"></div><div class="mu" id="centroActualTxt" style="text-align:center;margin-top:4px"></div></div>
+ <div class="seg"><button data-m="num" class="on">Nº empleado</button><button data-m="qr">QR</button><button data-m="face">Rostro</button></div>
+ <div class="card">
+  <div id="m-num"><input id="numIn" placeholder="Número de empleado" inputmode="numeric"><button class="btn" id="numBtn">Registrar</button></div>
+  <div id="m-cam" class="hide"><video id="vid" autoplay playsinline muted></video>
+   <button class="btn hide" id="faceBtn">Reconocer rostro</button><div class="mu" id="camHint"></div><div class="mu" id="dbg" style="font-size:11px"></div><button class="btn s" id="flip" style="margin-top:8px">🔄 Cambiar cámara</button></div>
+  <div class="res" id="res"></div>
+ </div>
+</section>
+
+<section id="emp" class="hide">
+ <div class="card"><b>Nuevo empleado</b>
+  <input id="eId" placeholder="Número de empleado" style="margin-top:8px"><input id="eName" placeholder="Nombre completo" style="margin-top:8px">
+  <select id="eCentro" style="margin-top:8px"><option value="">Selecciona centro</option></select>
+  <button class="btn" id="addEmp">Agregar</button></div>
+ <div class="card"><div style="display:grid;grid-template-columns:1fr 1fr;gap:8px"><div><label class="mu">Filtrar centro</label><select id="empCentroFilter"><option value="">Todos</option></select></div><div><label class="mu">Buscar</label><input id="empSearch" placeholder="Buscar..."></div></div></div>
+ <div class="card" id="empList"></div>
+</section>
+
+<section id="centros" class="hide">
+ <div class="card"><b>🏢 Centros de trabajo</b><div class="mu" style="margin:6px 0">Cada centro tiene su geocerca 50m</div>
+  <input id="cNombre" placeholder="Nombre centro (ej: Matriz)" style="margin-top:8px">
+  <input id="cDir" placeholder="Dirección opcional" style="margin-top:8px">
+  <button class="btn" id="addCentro">Agregar centro</button>
+ </div>
+ <div class="card" id="centrosList"></div>
+ <div class="card"><b>👥 Usuarios por centro</b>
+  <input id="uUser" placeholder="Usuario" style="margin-top:8px">
+  <input id="uPass" type="password" placeholder="Contraseña" style="margin-top:8px">
+  <input id="uNombre" placeholder="Nombre responsable" style="margin-top:8px">
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px">
+   <select id="uCentro"><option value="">Todos (Superadmin)</option></select>
+   <select id="uRol"><option value="admin_centro">Admin centro</option><option value="superadmin">Superadmin</option></select>
+  </div>
+  <button class="btn" id="addUsuario" style="background:#7c3aed">Crear usuario</button>
+ </div>
+ <div class="card" id="usuariosList"></div>
+</section>
+
+<section id="log" class="hide">
+ <div class="card">
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px">
+   <div><label class="mu">Desde</label><input type="date" id="logFrom"></div>
+   <div><label class="mu">Hasta</label><input type="date" id="logTo"></div>
+  </div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px">
+   <div><label class="mu">Centro</label><select id="logCentroFilter"><option value="">Todos</option></select></div>
+   <div><label class="mu">Empleado</label><select id="logEmpFilter"><option value="">Todos</option></select></div>
+  </div>
+  <div id="tot" class="mu"></div>
+  <div class="tw" style="margin-top:8px"><table style="min-width:700px"><thead><tr><th>Fecha</th><th>Centro</th><th>Nº</th><th>Nombre</th><th>Entrada</th><th>Salida</th><th>Horas</th><th>Retardo</th><th>Extra</th></tr></thead><tbody id="tb"></tbody></table></div>
+  <div style="display:flex;gap:8px;margin-top:10px"><button class="btn" id="csv" style="flex:1">Copiar CSV</button><button class="btn s" id="logClear">Limpiar</button></div>
+ </div>
+</section>
+
+<section id="rep" class="hide">
+<div class="card">
+ <b>📊 Reporte</b>
+ <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin:10px 0">
+  <div><label class="mu">Centro</label><select id="repCentroFilter"><option value="">Todos</option></select></div>
+  <div><label class="mu">Colaborador</label><select id="repEmpFilter"><option value="">Todos - resumen</option></select></div>
+  <div><label class="mu">Vista</label><div class="pp" style="margin:0"><button data-p="s" class="on">Semanal</button><button data-p="q">Quincenal</button><button data-p="custom">Personal</button></div></div>
+ </div>
+ <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin:10px 0">
+  <div><label class="mu">Desde</label><input type="date" id="repFrom"></div>
+  <div><label class="mu">Hasta</label><input type="date" id="repTo"></div>
+  <div><label class="mu">Fecha ref</label><input type="date" id="rDate"></div>
+ </div>
+ <div id="rLbl" class="mu" style="margin:8px 0"></div>
+ <div id="repSummary"><div class="tw"><table style="min-width:520px"><thead><tr><th>Nº</th><th>Nombre</th><th>Centro</th><th>Días</th><th>Horas</th><th>Extra</th><th>Retardos</th></tr></thead><tbody id="rtb"></tbody></table></div></div>
+ <div id="repDetail" class="hide">
+  <div id="repKPI" style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin:10px 0"></div>
+  <div id="repCounters" style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:8px;margin:10px 0"></div>
+  <div class="tw"><table style="min-width:700px"><thead><tr><th>Día</th><th>Fecha</th><th>Entrada</th><th>Salida</th><th>Estado</th><th>Horas</th><th>Extra</th><th>Llegada</th></tr></thead><tbody id="rtbDetail"></tbody></table></div>
+  <div id="repAccum" class="mu" style="margin-top:10px;padding:10px;background:var(--bg);border-radius:8px"></div>
+ </div>
+ <div style="display:flex;gap:8px;margin-top:10px"><button class="btn" id="rcsv" style="flex:1">Copiar CSV</button><button class="btn s" id="repClear">Limpiar</button></div>
+</div>
+</section>
+
+</div>
+</main>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jsQR/1.4.0/jsQR.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js"></script>
+<script>
+const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
+let D={emps:[],recs:[],centros:[],usuarios:[]};
+try{
+  const raw=localStorage.getItem('reg_v1');
+  if(raw){
+    const tmp=JSON.parse(raw);
+    D.emps=tmp.emps||[];
+    D.recs=tmp.recs||[];
+    D.centros=tmp.centros||[];
+    D.usuarios=tmp.usuarios||[];
+  }
+  if(!D.centros || D.centros.length===0){
+    D.centros=[{id:'centro_default',nombre:'Centro Principal',dir:'',lat:null,lng:null}];
+  }
+  D.emps.forEach(e=>{ if(!e.centroId) e.centroId='centro_default'; });
+}catch(e){
+  D={emps:[],recs:[],centros:[{id:'centro_default',nombre:'Centro Principal',dir:'',lat:null,lng:null}],usuarios:[]};
+}
+const save=()=>{try{localStorage.setItem('reg_v1',JSON.stringify(D))}catch(e){}};
+const API='https://script.google.com/macros/s/AKfycbyl4m-KuhA4Mopt_O0sPX2yC7TduGVWyTKbL0AFAibiGFp82-WSFP4sIc6XszxB7XgL5w/exec',KEY='Asist-2026-xK9';
+const HIN=7*60,HOUT=15*60;
+const TOL_GREEN=5,TOL_YELLOW=10,MAX_TOL=3;
+const GEOFENCE_M=50;
+let COMPANY_LAT=null,COMPANY_LNG=null;
+try{const c=JSON.parse(localStorage.getItem('company_loc')||'null'); if(c){COMPANY_LAT=c.lat; COMPANY_LNG=c.lng}}catch(e){}
+let ADMIN='',admT=null;
+window.currentUser=null;
+let currentCentroId=null;
+let per='s';
+
+async function call(a,d){const r=await fetch(API,{method:'POST',headers:{'Content-Type':'text/plain'},body:JSON.stringify({key:KEY,pass:ADMIN,action:a,...d})});return r.json()}
+function setSync(t){const el=$('#sync'); if(el) el.textContent=t}
+async function pull(){if(!API)return;try{const r=await call('get');if(!r.ok)throw 0;D.emps=r.emps||D.emps;D.recs=r.recs||D.recs; if(r.centros) D.centros=r.centros; save(); renderAll(); setSync('☁️ Sincronizado')}catch(e){setSync('⚠️ Sin conexión: modo local')}}
+async function push(a,d){if(!API)return;try{const r=await call(a,d);if(!r.ok)throw 0;setSync('☁️ Sincronizado')}catch(e){setSync('⚠️ No se pudo guardar en Sheets')}}
+const pad=n=>String(n).padStart(2,'0');
+const mins=t=>{const d=new Date(t);return d.getHours()*60+d.getMinutes()};
+function getTolUsadas(id,weekStart){const ws=wk(weekStart); return D.recs.filter(r=>r.emp===id && wk(r.in)===ws && r.clas==='VERDE_TOL').length;}
+function clasifica(id,t){const m=mins(t)-HIN; if(m<=0) return {tipo:'A_TIEMPO',min:0,color:'green',label:'A tiempo'}; if(m<=TOL_GREEN){const usadas=getTolUsadas(id,t); if(usadas<MAX_TOL){return {tipo:'VERDE_TOL',min:m,color:'green',label:'Tolerancia '+(usadas+1)+' de '+MAX_TOL};}else{return {tipo:'AMARILLO_AGOTO_TOL',min:m,color:'yellow',label:'Agotó tolerancias'};}} if(m<=TOL_YELLOW){return {tipo:'AMARILLO_PREV',min:m,color:'yellow',label:'Preventivo '+m+'m'};} return {tipo:'ROJO_ALERTA',min:m,color:'red',label:'ALERTA '+m+'m'};}
+const lateOf=t=>{const m=mins(t)-HIN;return m>0?m:0};
+const WEEK=48*3600000;
+const wk=t=>{const d=new Date(t);d.setHours(0,0,0,0);d.setDate(d.getDate()-(d.getDay()+6)%7);return d.getTime()};
+const weekMs=(id,t)=>D.recs.filter(r=>r.emp===id&&r.out&&wk(r.in)===wk(t)).reduce((a,r)=>a+r.out-r.in,0);
+function extraMap(){const M={},G={}; D.recs.filter(r=>r.out).forEach(r=>{const k=r.emp+'|'+wk(r.in);(G[k]=G[k]||[]).push(r)}); Object.values(G).forEach(L=>{L.sort((a,b)=>a.in-b.in);let c=0;L.forEach(r=>{const p=c;c+=r.out-r.in;M[r.rid]=Math.max(0,c-Math.max(p,WEEK))})});return M}
+const hm=t=>{const d=new Date(t);return pad(d.getHours())+':'+pad(d.getMinutes())+':'+pad(d.getSeconds())};
+const dk=t=>{const d=new Date(t);return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate())};
+const dur=ms=>{const m=Math.floor(ms/60000);return Math.floor(m/60)+'h '+pad(m%60)+'m'};
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+function haversine(lat1,lon1,lat2,lon2){const R=6371000,toRad=x=>x*Math.PI/180;const dLat=toRad(lat2-lat1),dLon=toRad(lon2-lon1);const a=Math.sin(dLat/2)**2+Math.cos(toRad(lat1))*Math.cos(toRad(lat2))*Math.sin(dLon/2)**2;return R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));}
+function getCentroNombre(id){const c=D.centros.find(x=>x.id===id); return c?c.nombre:'(sin centro)';}
+function getCentro(id){return D.centros.find(x=>x.id===id);}
+function getCentroGeofence(centroId){
+  if(!centroId) return {lat:COMPANY_LAT,lng:COMPANY_LNG};
+  const c=getCentro(centroId);
+  if(c && c.lat!==null && c.lat!==undefined) return {lat:c.lat,lng:c.lng};
+  try{const stored=JSON.parse(localStorage.getItem('company_loc_'+centroId)||'null'); if(stored) return {lat:stored.lat,lng:stored.lng};}catch(e){}
+  return {lat:COMPANY_LAT,lng:COMPANY_LNG};
+}
+async function checkGeofenceCentro(centroId){
+  const loc=getCentroGeofence(centroId);
+  if(loc.lat===null || loc.lng===null) return {ok:true,skip:true};
+  return new Promise(res=>{
+    if(!navigator.geolocation) return res({ok:true,skip:true});
+    navigator.geolocation.getCurrentPosition(pos=>{
+      const d=haversine(pos.coords.latitude,pos.coords.longitude,loc.lat,loc.lng);
+      if(d<=GEOFENCE_M) res({ok:true,dist:d});
+      else res({ok:false,msg:'Estás a '+Math.round(d)+'m de '+getCentroNombre(centroId)+' (máx 50m)',dist:d});
+    },()=>res({ok:true,skip:true}),{enableHighAccuracy:false,timeout:5000});
+  });
+}
+
+setInterval(()=>{const n=new Date();const cl=$('#clock'); if(cl) cl.textContent=hm(n); const dt=$('#date'); if(dt) dt.textContent=n.toLocaleDateString('es-MX',{weekday:'long',day:'numeric',month:'long',year:'numeric'})},500);
+
+// HOME
+function updateHomeCentros(){
+  const sel=$('#homeCentro');
+  if(!sel) return;
+  sel.innerHTML='<option value="">Selecciona tu centro...</option>'+D.centros.map(c=>`<option value="'+esc(c.id)+'">'+esc(c.nombre)+'</option>`).join('');
+  renderCentrosSelects();
+}
+function renderCentrosSelects(){
+  const ids=['eCentro','uCentro','empCentroFilter','logCentroFilter','repCentroFilter'];
+  ids.forEach(id=>{
+    const el=$('#'+id);
+    if(!el) return;
+    const cur=el.value;
+    const isUserCenter=id==='uCentro';
+    let html=isUserCenter?'<option value="">Todos (Superadmin)</option>':'<option value="">Todos</option>';
+    if(id==='eCentro') html='<option value="">Selecciona centro</option>'+D.centros.map(c=>`<option value="${esc(c.id)}">${esc(c.nombre)}</option>`).join('');
+    else html+=D.centros.map(c=>`<option value="${esc(c.id)}">${esc(c.nombre)}</option>`).join('');
+    if(id==='empCentroFilter' || id==='logCentroFilter' || id==='repCentroFilter' || id==='eCentro' || id==='uCentro'){}
+    // preserve
+    if(id==='eCentro') el.innerHTML='<option value="">Selecciona centro</option>'+D.centros.map(c=>`<option value="${esc(c.id)}">${esc(c.nombre)}</option>`).join('');
+    else if(id==='uCentro') el.innerHTML='<option value="">Todos (Superadmin)</option>'+D.centros.map(c=>`<option value="${esc(c.id)}">${esc(c.nombre)}</option>`).join('');
+    else el.innerHTML='<option value="">Todos</option>'+D.centros.map(c=>`<option value="${esc(c.id)}">${esc(c.nombre)}</option>`).join('');
+    if(cur) el.value=cur;
+  });
+}
+function showHomeError(msg){const el=$('#homeError'); el.textContent=msg; el.style.display='block'; setTimeout(()=>el.style.display='none',4000);}
+function showHomeInfo(msg){const el=$('#homeInfo'); el.textContent=msg; el.style.display='block'; setTimeout(()=>el.style.display='none',5000);}
+function enterAsEmpleado(){
+  let centroId=$('#homeCentro').value;
+  if(!centroId){
+    if(D.centros.length>0) centroId=D.centros[0].id;
+    else { showHomeError('No hay centros'); return; }
+  }
+  currentCentroId=centroId;
+  window.currentUser=null;
+  localStorage.setItem('last_centro',centroId);
+  $('#currentCentroLabel').textContent='🏢 '+getCentroNombre(centroId)+' · 👷 Empleado';
+  $('#centroActualTxt').textContent='Centro: '+getCentroNombre(centroId);
+  $('#homeScreen').classList.add('hide');
+  $('#appScreen').classList.remove('hide');
+  $$('.tabs button').forEach(b=>{ if(b.dataset.t==='reg') b.classList.remove('hide'); else b.classList.add('hide'); });
+  $('.tabs button[data-t=reg]').click();
+  setMode('num');
+}
+function enterAsAdmin(userObj){
+  currentCentroId=userObj.centroId||null;
+  window.currentUser=userObj;
+  ADMIN=userObj.usuario;
+  const centroTxt=userObj.centroId?getCentroNombre(userObj.centroId):'Todos los centros';
+  $('#currentCentroLabel').textContent='🏢 '+centroTxt+' · 👤 '+userObj.usuario+' ('+userObj.rol+')';
+  setSync('👤 '+userObj.usuario+' · '+centroTxt);
+  $('#homeScreen').classList.add('hide');
+  $('#appScreen').classList.remove('hide');
+  $$('.tabs button').forEach(b=>b.classList.remove('hide'));
+  $('.tabs button[data-t=reg]').click();
+  renderAll();
+}
+$('#homeEnterReg')?.addEventListener('click',enterAsEmpleado);
+$('#homeAdminLogin')?.addEventListener('click', async ()=>{
+  const centroId=$('#homeCentro').value;
+  const user=$('#homeUser').value.trim();
+  const pass=$('#homePass').value.trim();
+  if(!user||!pass){ showHomeError('Escribe usuario y contraseña'); return; }
+  if(D.usuarios.length===0){
+    const nuevo={id:'user_'+Date.now(),usuario:user,pass:pass,nombre:user,centroId:null,rol:'superadmin'};
+    D.usuarios.push(nuevo); save();
+    alert('✅ Primer Superadmin creado: '+user);
+    enterAsAdmin(nuevo); return;
+  }
+  const u=D.usuarios.find(x=>x.usuario===user && x.pass===pass);
+  if(u){
+    if(centroId && u.centroId && u.centroId!==centroId){ showHomeError('Usuario es de '+getCentroNombre(u.centroId)); return; }
+    enterAsAdmin(u); return;
+  }
+  if(API){
+    try{
+      const r=await fetch(API,{method:'POST',headers:{'Content-Type':'text/plain'},body:JSON.stringify({key:KEY,pass:pass,action:'auth'})}).then(x=>x.json());
+      if(r.ok){ const adminUser={usuario:user,pass:pass,nombre:user,centroId:centroId||null,rol:'superadmin',id:'admin_api'}; enterAsAdmin(adminUser); return; }
+    }catch(e){}
+  }
+  showHomeError('Usuario o contraseña incorrectos');
+});
+$('#logoutBtn')?.addEventListener('click',()=>{
+  if(confirm('¿Salir?')){ $('#appScreen').classList.add('hide'); $('#homeScreen').classList.remove('hide'); currentCentroId=null; window.currentUser=null; ADMIN=''; $('#homeUser').value=''; $('#homePass').value=''; stopCam(); updateHomeCentros(); }
+});
+setTimeout(()=>{
+  if(D.centros.length===0){ D.centros=[{id:'centro_default',nombre:'Centro Principal',dir:'',lat:null,lng:null}]; save(); }
+  updateHomeCentros();
+  try{ const last=localStorage.getItem('last_centro'); if(last) $('#homeCentro').value=last; }catch(e){}
+  if(D.usuarios.length===0){
+    const el=$('#homeInfo'); el.innerHTML='⚠️ Primer uso: crea tu Superadmin arriba'; el.style.display='block';
+  }
+},300);
+
+// Empleados
+function renderEmps(){
+  const centroFilter=$('#empCentroFilter')?.value||'';
+  const search=($('#empSearch')?.value||'').toLowerCase();
+  let emps=D.emps;
+  if(window.currentUser && window.currentUser.centroId) emps=emps.filter(e=>e.centroId===window.currentUser.centroId);
+  if(centroFilter) emps=emps.filter(e=>e.centroId===centroFilter);
+  if(search) emps=emps.filter(e=>e.id.toLowerCase().includes(search) || e.name.toLowerCase().includes(search));
+  $('#empList').innerHTML=emps.length?emps.map(e=>`
+    <div class="row"><div><b>${esc(e.name)}</b> · Nº ${esc(e.id)}<br><span class="mu">🏢 ${esc(getCentroNombre(e.centroId))}</span></div>
+    <div><button class="btn s" data-a="del" data-i="${esc(e.id)}">🗑️</button></div></div>
+  `).join(''):'<div class="mu">Sin empleados</div>';
+}
+$('#addEmp').onclick=()=>{const id=$('#eId').value.trim(),n=$('#eName').value.trim(),centroId=$('#eCentro').value||D.centros[0]?.id; if(!id||!n)return alert('Faltan datos'); if(!centroId) return alert('Selecciona centro'); if(D.emps.some(e=>e.id===id))return alert('Ya existe'); D.emps.push({id,name:n,face:[],centroId}); save(); push('saveEmp',{emp:{id,name:n,face:[],centroId}}); $('#eId').value=$('#eName').value=''; renderEmps();};
+$('#empList').onclick=e=>{const b=e.target.closest('button'); if(!b) return; const id=b.dataset.i; if(b.dataset.a==='del'){ if(confirm('¿Eliminar?')){ D.emps=D.emps.filter(x=>x.id!==id); save(); renderEmps(); }}};
+$('#empCentroFilter')?.addEventListener('change',renderEmps);
+$('#empSearch')?.addEventListener('input',renderEmps);
+
+// Centros
+function renderCentros(){
+  const cont=$('#centrosList');
+  if(!cont) return;
+  cont.innerHTML=D.centros.length?D.centros.map(c=>`
+    <div class="row" style="flex-direction:column;align-items:stretch">
+      <div style="display:flex;justify-content:space-between;width:100%"><div><b>${esc(c.nombre)}</b><br><span class="mu">${esc(c.dir||'Sin dir')} · ${c.lat?'📍 Geocerca':'⚠️ Sin geocerca'}</span></div>
+      <div><button class="btn s" data-a="loc" data-id="${esc(c.id)}">📍 Fijar</button><button class="btn s" data-a="delC" data-id="${esc(c.id)}">🗑️</button></div></div>
+    </div>
+  `).join(''):'<div class="mu">No hay centros</div>';
+  renderCentrosSelects();
+  const selHome=$('#homeCentro');
+  if(selHome){ const cur=selHome.value; selHome.innerHTML='<option value="">Selecciona centro...</option>'+D.centros.map(c=>`<option value="${esc(c.id)}">${esc(c.nombre)}</option>`).join(''); if(cur) selHome.value=cur; }
+}
+function renderUsuarios(){
+  const cont=$('#usuariosList');
+  if(!cont) return;
+  cont.innerHTML=D.usuarios.length?D.usuarios.map(u=>`<div class="row"><div><b>${esc(u.usuario)}</b> - ${esc(u.nombre||'')}<br><span class="mu">${esc(u.rol)} · ${u.centroId?esc(getCentroNombre(u.centroId)):'Todos'}</span></div><div><button class="btn s" data-a="delU" data-id="${esc(u.id)}">🗑️</button></div></div>`).join(''):'<div class="mu">No hay usuarios</div>';
+}
+$('#addCentro')?.addEventListener('click',()=>{const nombre=$('#cNombre').value.trim(),dir=$('#cDir').value.trim(); if(!nombre) return alert('Nombre'); const id='centro_'+Date.now(); D.centros.push({id,nombre,dir,lat:null,lng:null}); save(); renderCentros(); $('#cNombre').value=''; $('#cDir').value='';});
+$('#centrosList')?.addEventListener('click',e=>{const b=e.target.closest('button'); if(!b) return; const id=b.dataset.id; if(b.dataset.a==='delC'){ if(D.centros.length<=1) return alert('Último centro no'); if(D.emps.some(x=>x.centroId===id)) return alert('Hay empleados'); if(confirm('¿Eliminar centro?')){ D.centros=D.centros.filter(c=>c.id!==id); D.usuarios=D.usuarios.filter(u=>u.centroId!==id); save(); renderCentros(); renderUsuarios(); }} if(b.dataset.a==='loc'){ if(!navigator.geolocation) return alert('GPS no'); navigator.geolocation.getCurrentPosition(pos=>{ const c=getCentro(id); c.lat=pos.coords.latitude; c.lng=pos.coords.longitude; localStorage.setItem('company_loc_'+id,JSON.stringify({lat:c.lat,lng:c.lng})); if(D.centros.length===1){ COMPANY_LAT=c.lat; COMPANY_LNG=c.lng; localStorage.setItem('company_loc',JSON.stringify({lat:c.lat,lng:c.lng})); } save(); renderCentros(); alert('Ubicación fijada: '+c.nombre); },err=>alert(err.message),{enableHighAccuracy:true}); }});
+$('#addUsuario')?.addEventListener('click',()=>{const usuario=$('#uUser').value.trim(),pass=$('#uPass').value.trim(),nombre=$('#uNombre').value.trim(),centroId=$('#uCentro').value||null,rol=$('#uRol').value; if(!usuario||!pass) return alert('Faltan'); if(D.usuarios.some(u=>u.usuario===usuario)) return alert('Ya existe'); D.usuarios.push({id:'user_'+Date.now(),usuario,pass,nombre,centroId,rol}); save(); renderUsuarios(); $('#uUser').value=''; $('#uPass').value=''; $('#uNombre').value=''; alert('Usuario creado: '+usuario);});
+$('#usuariosList')?.addEventListener('click',e=>{const b=e.target.closest('button'); if(!b) return; if(b.dataset.a==='delU'){ const id=b.dataset.id; if(confirm('¿Eliminar usuario?')){ D.usuarios=D.usuarios.filter(u=>u.id!==id); save(); renderUsuarios(); }}});
+
+// Registros
+let stream=null,scanning=false,mode='num',busy=false,camErr='',facing='user',camTk=0,regBusy=false;
+async function cam(v,face){face=face||'user';stopCam();const my=++camTk;try{const st=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:face},width:{ideal:1280},height:{ideal:720}}});if(my!==camTk){st.getTracks().forEach(t=>t.stop());return false}stream=st;v.style.transform=face==='user'?'scaleX(-1)':'none';v.srcObject=stream;await v.play();return true}catch(e){camErr=e.name||'error';return false}}
+function stopCam(){scanning=false;if(stream){stream.getTracks().forEach(t=>t.stop());stream=null}}
+function show(ok,html){const r=$('#res');r.className='res '+(ok?'ok':'ko');r.innerHTML=html;r.style.display='block';clearTimeout(show.t);show.t=setTimeout(()=>{r.style.display='none';r.className='res'},6000)}
+const lastReg={};
+async function register(id,via){if(regBusy)return false;regBusy=true;try{return await _register(id,via)}finally{regBusy=false}}
+async function _register(id,via){
+ let pend=null;if(API)await pull();
+ id=String(id).trim();const e=D.emps.find(x=>x.id===id);
+ if(!e){show(false,'<b>No encontrado</b><div class="mu">'+esc(id)+'</div>');return false}
+ if(lastReg[id]&&Date.now()-lastReg[id]<10000){show(false,'<b>Ya registraste</b>');return false}lastReg[id]=Date.now();
+ const centroAValidar=currentCentroId||e.centroId;
+ const geo=await checkGeofenceCentro(centroAValidar);
+ if(!geo.ok){show(false,'<b>⛔ Fuera de rango 50m - '+esc(getCentroNombre(centroAValidar))+'</b><div class="mu">'+esc(geo.msg)+'</div>');return false}
+ if(currentCentroId && e.centroId!==currentCentroId && !window.currentUser){show(false,'<b>No pertenece a este centro</b><div class="mu">'+esc(e.name)+' es de '+esc(getCentroNombre(e.centroId))+'</div>');return false}
+ const now=Date.now();
+ let open=D.recs.find(r=>r.emp===id&&!r.out);
+ if(open&&dk(open.in)!==dk(now)){open.out=new Date(open.in).setHours(15,0,0,0);open.nota='FALTA CHECADA';save();open=null;}
+ if(open){open.out=now;open.outVia=via;save();pend=push('out',{rid:open.rid,out:now,hrs:+((now-open.in)/3600000).toFixed(2),extra:0});show(true,'<b>👋 Salida</b><div>'+esc(e.name)+'</div><div>'+hm(open.in)+' → '+hm(now)+'</div><div><b>'+dur(now-open.in)+'</b></div>');}
+ else{
+  const clas=clasifica(id,now);
+  const nr={rid:'r'+now+Math.floor(Math.random()*999),emp:id,in:now,out:null,inVia:via,clas:clas.tipo,lateMin:clas.min};D.recs.push(nr);save();pend=push('in',{rid:nr.rid,emp:id,name:e.name,in:now,via,late:clas.min,clas:clas.tipo});
+  show(true,'<b>'+(clas.tipo==='A_TIEMPO'?'✅':'🟢'+(clas.color==='yellow'?'🟡':'🔴'))+' Entrada '+clas.label+'</b><div>'+esc(e.name)+'</div><div>'+hm(now)+'</div>');
+ }
+ renderLog();if(pend)await pend;return true
+}
+$('#numBtn').onclick=async()=>{if(await register($('#numIn').value,'número'))$('#numIn').value=''};
+$('#numIn').onkeydown=e=>{if(e.key==='Enter')$('#numBtn').click()};
+async function setMode(m,keep){mode=m;if(!keep)facing=(m==='qr'?'environment':'user');$$('.seg button').forEach(b=>b.classList.toggle('on',b.dataset.m===m)); $('#m-num').classList.toggle('hide',m!=='num');$('#m-cam').classList.remove('hide'); stopCam(); const ok=await cam($('#vid'),facing); if(mode!==m)return; $('#camHint').textContent=ok?(m==='qr'?'Muestra QR':m==='face'?'Mira cámara':'Se tomará foto'):'No cámara'; if(ok&&m==='qr'){scanning=true;scanLoop()}}
+$$('.seg button').forEach(b=>b.onclick=()=>setMode(b.dataset.m));
+$('#flip').onclick=()=>{facing=facing==='user'?'environment':'user';setMode(mode,true)};
+const BD='BarcodeDetector' in window?new BarcodeDetector({formats:['qr_code']}):null;
+async function readQR(v){if(BD){try{const r=await BD.detect(v);if(r.length)return r[0].rawValue}catch(e){}} if(typeof jsQR!=='function')return null; const w=v.videoWidth,h=v.videoHeight,c=document.createElement('canvas');c.width=w;c.height=h;const x=c.getContext('2d',{willReadFrequently:true});x.drawImage(v,0,0);const q=jsQR(x.getImageData(0,0,w,h).data,w,h,{inversionAttempts:'attemptBoth'});return q?q.data:null}
+async function scanLoop(){if(!scanning)return;const v=$('#vid'); if(!busy&&v.videoWidth){const t=await readQR(v); if(t&&t.startsWith('EMP:')){busy=true;register(t.slice(4),'QR');setTimeout(()=>busy=false,4000)}} setTimeout(()=>requestAnimationFrame(scanLoop),80)}
+
+function getLogRows(){
+  const empFilter=$('#logEmpFilter')?.value||'';
+  const centroFilter=$('#logCentroFilter')?.value||'';
+  const fromVal=$('#logFrom')?.value;
+  const toVal=$('#logTo')?.value;
+  let a=0,b=Infinity;
+  if(fromVal) a=new Date(fromVal+'T00:00:00').getTime();
+  if(toVal) b=new Date(toVal+'T23:59:59').getTime();
+  const EM=extraMap();
+  return D.recs.filter(r=>{
+    const inRange=r.in>=a && r.in<=b;
+    const empMatch=!empFilter || r.emp===empFilter;
+    let centroMatch=true;
+    if(centroFilter){ const empRec=D.emps.find(e=>e.id===r.emp); centroMatch=empRec && empRec.centroId===centroFilter; }
+    if(window.currentUser && window.currentUser.centroId){ const empRec=D.emps.find(e=>e.id===r.emp); if(empRec && empRec.centroId!==window.currentUser.centroId) return false; }
+    if(currentCentroId && !window.currentUser){ const empRec=D.emps.find(e=>e.id===r.emp); if(empRec && empRec.centroId!==currentCentroId) return false; }
+    return inRange && empMatch && centroMatch;
+  }).sort((x,y)=>y.in-x.in).map(r=>{
+    const e=D.emps.find(x=>x.id===r.emp);
+    const centroNombre=e?getCentroNombre(e.centroId):'(sin)';
+    const realClas=clasifica(r.emp,r.in);
+    const finalClas=r.clas||realClas.tipo;
+    const finalLate=(r.lateMin!==undefined&&r.lateMin!==null)?r.lateMin:realClas.min;
+    return {id:r.emp,name:e?e.name:'(eliminado)',centro:centroNombre,date:dk(r.in),i:r.in,o:r.out,ms:(r.out||Date.now())-r.in,open:!r.out,late:finalLate,clas:finalClas,nota:r.nota||'',ex:r.out?(EM[r.rid]||0)/60000:0};
+  });
+}
+function renderLog(){
+  const R=getLogRows();
+  const badge=c=>{ if(c==='A_TIEMPO') return '✅ A tiempo'; if(c==='VERDE_TOL') return '🟢 Tolerancia'; if(c==='AMARILLO_AGOTO_TOL') return '🟡 Agotó tol'; if(c==='AMARILLO_PREV') return '🟡 Preventivo'; if(c&&c.startsWith('ROJO')) return '🔴 Alerta'; return '—'; };
+  $('#tb').innerHTML=R.length?R.map(r=>{
+    const color=r.late===0?'var(--ok)':r.late<=5?'#16a34a':r.late<=10?'#ca8a04':'var(--ko)';
+    return `<tr><td><b>${esc(r.date)}</b></td><td><span class="mu">${esc(r.centro)}</span></td><td>${esc(r.id)}</td><td>${esc(r.name)}</td><td>${hm(r.i)}</td><td>${r.o?hm(r.o):'<span class="mu">—</span>'}</td><td>${r.open?'<span class="mu">En curso</span>':dur(r.ms)}</td><td><span style="color:${color};font-weight:700">${badge(r.clas)}</span><br><small>${r.late>0?r.late+'m':''}</small></td><td>${r.ex?dur(r.ex*60000):'—'}</td></tr>`;
+  }).join(''):`<tr><td colspan="9" class="mu">Sin registros</td></tr>`;
+  $('#tot').textContent='Registros: '+R.length;
+}
+$('#csv').onclick=async()=>{const R=getLogRows(); const t='Fecha,Centro,Numero,Nombre,Entrada,Salida,Horas,Retardo,Extra\n'+R.map(r=>[r.date,'"'+r.centro+'"',r.id,'"'+r.name+'"',hm(r.i),r.o?hm(r.o):'',(r.ms/3600000).toFixed(2),r.late,(r.ex/60).toFixed(2)].join(',')).join('\n'); try{await navigator.clipboard.writeText(t);$('#csv').textContent='¡Copiado!'}catch(e){prompt('CSV:',t)}setTimeout(()=>$('#csv').textContent='Copiar CSV',1500)};
+$('#logEmpFilter')?.addEventListener('change',renderLog);
+$('#logCentroFilter')?.addEventListener('change',()=>{const centroId=$('#logCentroFilter').value; const sel=$('#logEmpFilter'); const emps=centroId?D.emps.filter(e=>e.centroId===centroId):D.emps; sel.innerHTML='<option value="">Todos</option>'+emps.map(e=>`<option value="${esc(e.id)}">${esc(e.name)}</option>`).join(''); renderLog();});
+$('#logFrom')?.addEventListener('change',renderLog);
+$('#logTo')?.addEventListener('change',renderLog);
+$('#logClear')?.addEventListener('click',()=>{ $('#logFrom').value=''; $('#logTo').value=''; $('#logEmpFilter').value=''; $('#logCentroFilter').value=''; renderLog();});
+
+// Reporte
+function range(){const fromVal=$('#repFrom')?.value; const toVal=$('#repTo')?.value; if(per==='custom' || fromVal || toVal){ let a=fromVal?new Date(fromVal+'T00:00:00').getTime():new Date('2000-01-01').getTime(); let b=toVal?new Date(toVal+'T23:59:59').getTime():Date.now(); return [a,b]; } const d=new Date($('#rDate').value+'T00:00:00'); let a,b; if(per==='s'){const w=(d.getDay()+6)%7;a=new Date(d);a.setDate(d.getDate()-w);b=new Date(a);b.setDate(a.getDate()+6)} else{const y=d.getFullYear(),m=d.getMonth();if(d.getDate()<=15){a=new Date(y,m,1);b=new Date(y,m,15)}else{a=new Date(y,m,16);b=new Date(y,m+1,0)}} b.setHours(23,59,59,999);return[a.getTime(),b.getTime()];}
+function getDaysArray(a,b){const days=[]; let cur=new Date(a); cur.setHours(0,0,0,0); const end=new Date(b); end.setHours(0,0,0,0); while(cur<=end){days.push(new Date(cur).getTime()); cur.setDate(cur.getDate()+1);} return days;}
+function repRows(){const[a,b]=range(),M={},EM=extraMap(); const empFilter=$('#repEmpFilter')?.value||''; const centroFilter=$('#repCentroFilter')?.value||''; D.recs.filter(r=>{const inRange=r.in>=a&&r.in<=b&&r.out; if(!inRange) return false; if(empFilter && r.emp!==empFilter) return false; if(centroFilter){ const e=D.emps.find(x=>x.id===r.emp); if(!e || e.centroId!==centroFilter) return false; } if(window.currentUser && window.currentUser.centroId){ const e=D.emps.find(x=>x.id===r.emp); if(e && e.centroId!==window.currentUser.centroId) return false; } return true;}).forEach(r=>{const x=M[r.emp]||(M[r.emp]={days:new Set(),ms:0,ex:0,lt:0,fo:0,centroId:D.emps.find(e=>e.id===r.emp)?.centroId});x.days.add(dk(r.in));x.ms+=r.out-r.in;x.ex+=(EM[r.rid]||0)/60000;if(lateOf(r.in))x.lt++;if(r.nota)x.fo++}); return D.emps.filter(e=>M[e.id]).map(e=>({id:e.id,name:e.name,centro:getCentroNombre(M[e.id].centroId),d:M[e.id].days.size,ms:M[e.id].ms,ex:M[e.id].ex,lt:M[e.id].lt}));}
+function renderRep(){
+  const[a,b]=range();
+  const empFilter=$('#repEmpFilter')?.value||'';
+  const emp=D.emps.find(e=>e.id===empFilter);
+  $('#rLbl').textContent='Del '+dk(a)+' al '+dk(b);
+  const sel=$('#repEmpFilter'); const curEmp=sel.value; const centroF=$('#repCentroFilter')?.value||''; let empsFiltrados=D.emps; if(centroF) empsFiltrados=empsFiltrados.filter(e=>e.centroId===centroF); if(window.currentUser && window.currentUser.centroId) empsFiltrados=empsFiltrados.filter(e=>e.centroId===window.currentUser.centroId); sel.innerHTML='<option value="">Todos - resumen</option>'+empsFiltrados.map(e=>`<option value="${esc(e.id)}">${esc(e.name)}</option>`).join(''); sel.value=curEmp;
+  const logSel=$('#logEmpFilter'); if(logSel){ const cur=logSel.value; logSel.innerHTML='<option value="">Todos</option>'+D.emps.map(e=>`<option value="${esc(e.id)}">${esc(e.name)}</option>`).join(''); logSel.value=cur; }
+  if(!empFilter){
+    $('#repSummary').classList.remove('hide'); $('#repDetail').classList.add('hide');
+    const R=repRows(); $('#rtb').innerHTML=R.length?R.map(r=>`<tr><td>${esc(r.id)}</td><td>${esc(r.name)}</td><td>${esc(r.centro)}</td><td>${r.d}</td><td>${dur(r.ms)}</td><td>${dur(r.ex*60000)}</td><td>${r.lt}</td></tr>`).join(''):'<tr><td colspan="7" class="mu">Sin registros</td></tr>';
+  } else {
+    $('#repSummary').classList.add('hide'); $('#repDetail').classList.remove('hide');
+    const EM=extraMap(); const days=getDaysArray(a,b); const diasNombres=['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
+    let totalMs=0,totalExtra=0,diasTrab=0,cntTiempo=0,cntTol=0,cntPrev=0,cntRojo=0,cntAusente=0,hoyMs=0; const hoyStr=dk(Date.now());
+    const rowsHtml=days.map(dayTs=>{
+      const dateStr=dk(dayTs); const recsDia=D.recs.filter(r=>r.emp===empFilter && dk(r.in)===dateStr).sort((x,y)=>x.in-y.in);
+      if(recsDia.length===0){cntAusente++; const dn=new Date(dayTs).getDay(); return `<tr style="background:#f9fafb"><td>${diasNombres[dn]}</td><td>${dateStr}</td><td>—</td><td>—</td><td><span class="mu">Ausente</span></td><td>—</td><td>—</td><td>—</td></tr>`;}
+      diasTrab++; const entrada=Math.min(...recsDia.map(r=>r.in)); const salidas=recsDia.filter(r=>r.out).map(r=>r.out); const salida=salidas.length?Math.max(...salidas):null; const msDia=recsDia.filter(r=>r.out).reduce((s,r)=>s+(r.out-r.in),0); const extraDia=recsDia.filter(r=>r.out).reduce((s,r)=>s+(EM[r.rid]||0),0); totalMs+=msDia; totalExtra+=extraDia; if(dateStr===hoyStr) hoyMs=msDia;
+      const realClas=clasifica(empFilter,entrada); const clasGuardada=recsDia[0].clas||realClas.tipo;
+      if(clasGuardada==='A_TIEMPO') cntTiempo++; else if(clasGuardada==='VERDE_TOL') cntTol++; else if(clasGuardada&&clasGuardada.startsWith('AMARILLO')) cntPrev++; else if(clasGuardada&&clasGuardada.startsWith('ROJO')) cntRojo++;
+      let badge='',color=''; if(clasGuardada==='A_TIEMPO'){badge='✅ A tiempo';color='var(--ok)';} else if(clasGuardada==='VERDE_TOL'){badge='🟢 Tolerancia';color='#16a34a';} else if(clasGuardada.startsWith('AMARILLO')){badge='🟡 Preventivo';color='#ca8a04';} else {badge='🔴 Tarde';color='var(--ko)';}
+      const lateMin=recsDia[0].lateMin!==undefined?recsDia[0].lateMin:realClas.min;
+      let estadoTrab=''; if(recsDia.some(r=>!r.out)){ const esHoy=dateStr===hoyStr; estadoTrab=esHoy?'<span style="color:#2563eb;font-weight:700">En curso</span>':'<span style="color:var(--ko)">Sin salida</span>'; } else estadoTrab='<span style="color:var(--ok)">Completado</span>';
+      const dn=new Date(dayTs).getDay();
+      return `<tr><td><b>${diasNombres[dn]}</b></td><td>${dateStr}</td><td>${hm(entrada)}<br><small style="color:${color}">${lateMin>0?lateMin+'m':''}</small></td><td>${salida?hm(salida):'—'}</td><td>${estadoTrab}</td><td><b>${dur(msDia)}</b></td><td>${extraDia>0?dur(extraDia):'—'}</td><td><span style="color:${color};font-weight:700">${badge}</span></td></tr>`;
+    }).join('');
+    $('#rtbDetail').innerHTML=rowsHtml||'<tr><td colspan="8" class="mu">Sin días</td></tr>';
+    const totalDiasRango=days.length;
+    $('#repKPI').innerHTML=`<div style="background:#dcfce7;border:1px solid var(--ok);border-radius:10px;padding:10px;text-align:center"><div class="mu">Horas acumuladas</div><div style="font-size:20px;font-weight:800">${dur(totalMs)}</div><div class="mu">${diasTrab}/${totalDiasRango} días</div></div><div style="background:#fef9c3;border:1px solid #eab308;border-radius:10px;padding:10px;text-align:center"><div class="mu">Extra</div><div style="font-size:20px;font-weight:800">${dur(totalExtra)}</div></div><div style="background:#dbeafe;border:1px solid var(--ac);border-radius:10px;padding:10px;text-align:center"><div class="mu">Hoy</div><div style="font-size:20px;font-weight:800">${hoyMs?dur(hoyMs):'—'}</div></div>`;
+    $('#repCounters').innerHTML=`<div style="background:var(--card);border:1px solid var(--bd);border-radius:10px;padding:8px;text-align:center"><div>✅</div><b>${cntTiempo}</b><div class="mu">A tiempo</div></div><div style="background:var(--card);border:1px solid var(--bd);border-radius:10px;padding:8px;text-align:center"><div>🟢</div><b>${cntTol}</b><div class="mu">Tolerancia</div></div><div style="background:var(--card);border:1px solid var(--bd);border-radius:10px;padding:8px;text-align:center"><div>🟡🔴</div><b>${cntPrev+cntRojo}</b><div class="mu">Tardes</div></div><div style="background:var(--card);border:1px solid var(--bd);border-radius:10px;padding:8px;text-align:center"><div>📅</div><b>${cntAusente}</b><div class="mu">Ausencias</div></div>`;
+    $('#repAccum').innerHTML=`<b>${esc(emp.name)}</b> · ${dk(a)} al ${dk(b)} · ${dur(totalMs)} totales · ${cntTiempo} a tiempo, ${cntTol} tol, ${cntPrev+cntRojo} tardes`;
+  }
+}
+$$('.pp button').forEach(b=>b.onclick=()=>{per=b.dataset.p;$$('.pp button').forEach(x=>x.classList.toggle('on',x===b)); if(per!=='custom'){ $('#repFrom').value=''; $('#repTo').value=''; } renderRep()});
+$('#rDate').value=dk(Date.now()); $('#rDate').onchange=()=>{per='s'; $$('.pp button').forEach(x=>x.classList.toggle('on',x.dataset.p==='s')); renderRep()};
+$('#repFrom')?.addEventListener('change',()=>{ if($('#repFrom').value||$('#repTo').value){ per='custom'; $$('.pp button').forEach(x=>x.classList.toggle('on',x.dataset.p==='custom')); } renderRep(); });
+$('#repTo')?.addEventListener('change',()=>{ if($('#repFrom').value||$('#repTo').value){ per='custom'; $$('.pp button').forEach(x=>x.classList.toggle('on',x.dataset.p==='custom')); } renderRep(); });
+$('#repEmpFilter')?.addEventListener('change',renderRep);
+$('#repCentroFilter')?.addEventListener('change',()=>{ const centroId=$('#repCentroFilter').value; const sel=$('#repEmpFilter'); const emps=centroId?D.emps.filter(e=>e.centroId===centroId):D.emps; const cur=sel.value; sel.innerHTML='<option value="">Todos - resumen</option>'+emps.map(e=>`<option value="${esc(e.id)}">${esc(e.name)}</option>`).join(''); sel.value=cur; renderRep(); });
+$('#repClear')?.addEventListener('click',()=>{ $('#repEmpFilter').value=''; $('#repFrom').value=''; $('#repTo').value=''; $('#rDate').value=dk(Date.now()); per='s'; $$('.pp button').forEach(x=>x.classList.toggle('on',x.dataset.p==='s')); renderRep(); });
+$('#rcsv').onclick=async()=>{
+  const empFilter=$('#repEmpFilter')?.value||'';
+  if(!empFilter){
+    const t='Numero,Nombre,Centro,Dias,Horas,Extra,Retardos\n'+repRows().map(r=>[r.id,'"'+r.name+'"',r.centro,r.d,(r.ms/3600000).toFixed(2),(r.ex/60).toFixed(2),r.lt].join(',')).join('\n');
+    try{await navigator.clipboard.writeText(t);$('#rcsv').textContent='¡Copiado!'}catch(e){prompt('CSV:',t)}setTimeout(()=>$('#rcsv').textContent='Copiar CSV',1500);
+  } else {
+    const[a,b]=range(); const days=getDaysArray(a,b); const EM=extraMap(); let csv='Dia,Fecha,Entrada,Salida,Estado,Horas,Extra,Llegada,Retardo\n';
+    days.forEach(dayTs=>{const dateStr=dk(dayTs); const recsDia=D.recs.filter(r=>r.emp===empFilter && dk(r.in)===dateStr); if(recsDia.length===0){ csv+=`${new Date(dayTs).toLocaleDateString('es-MX',{weekday:'short'})},${dateStr},—,—,Ausente,—,—,—,\n`; } else { const entrada=Math.min(...recsDia.map(r=>r.in)); const salidas=recsDia.filter(r=>r.out).map(r=>r.out); const salida=salidas.length?Math.max(...salidas):''; const msDia=recsDia.filter(r=>r.out).reduce((s,r)=>s+(r.out-r.in),0); const extraDia=recsDia.filter(r=>r.out).reduce((s,r)=>s+(EM[r.rid]||0),0); const realClas=clasifica(empFilter,entrada); csv+=`${new Date(dayTs).toLocaleDateString('es-MX',{weekday:'short'})},${dateStr},${hm(entrada)},${salida?hm(salida):''},${recsDia.some(r=>!r.out)?'Sin salida':'Completado'},${(msDia/3600000).toFixed(2)},${(extraDia/3600000).toFixed(2)},${recsDia[0].clas||realClas.tipo},${realClas.min}\n`; }});
+    try{await navigator.clipboard.writeText(csv);$('#rcsv').textContent='¡Copiado!'}catch(e){prompt('CSV:',csv)}setTimeout(()=>$('#rcsv').textContent='Copiar CSV',1500);
+  }
+};
+
+// Tabs
+async function login(){ if(ADMIN) return true; if(D.usuarios.length>0){ const u=window.currentUser; if(u) return true; return false; } return true; }
+function renderAll(){ renderEmps(); renderCentros(); renderUsuarios(); renderLog(); renderRep(); updateHomeCentros(); }
+$$('.tabs button').forEach(b=>b.onclick=async()=>{ $$('.tabs button').forEach(x=>x.classList.toggle('on',x===b)); ['reg','emp','log','rep','centros'].forEach(t=>$('#'+t).classList.toggle('hide',t!==b.dataset.t)); stopCam(); if(b.dataset.t==='reg')setMode('num'); if(b.dataset.t==='emp')renderEmps(); if(b.dataset.t==='log')renderLog(); if(b.dataset.t==='rep')renderRep(); if(b.dataset.t==='centros'){renderCentros();renderUsuarios();} });
+renderAll(); setMode('num');
+try{if('serviceWorker' in navigator&&location.protocol==='https:')navigator.serviceWorker.register('sw.js')}catch(e){}
+if(API){setSync('Conectando…');pull();setInterval(()=>{if(!regBusy)pull()},60000)}else setSync('Modo local');
+</script></body></html>
